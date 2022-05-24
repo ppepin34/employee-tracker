@@ -1,6 +1,7 @@
 const inquirer = require('inquirer');
 const db = require('./db/connection');
 const cTable = require('console.table');
+const {viewDepartments} = require('./script/view');
 
 function init() {
     console.log('Employee Manager');
@@ -21,8 +22,16 @@ function mainMenu() {
             if (answers.menu === 'Quit') {
                 console.log('Goodbye!');
                 process.exit();
+            } else if (answers.menu === 'View all departments') {
+                viewDepartments()
+            } else if (answers.menu === 'View all roles') {
+                viewRoles()
+            } else if (answers.menu === 'View all employees') {
+                viewEmployees()
             }
         })
-}
+};
 
-init()
+init();
+
+module.exports = { mainMenu };
