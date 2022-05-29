@@ -138,9 +138,10 @@ function addRole() {
                     type: 'list',
                     name: 'department',
                     message: 'Which department does this role belong to?',
-                    choices: function() {
+                    choices: function () {
                         let choiceArray = departments.map(choice => choice.name);
-                    return choiceArray}
+                        return choiceArray
+                    }
                 }
             ])
             .then((answers) => {
@@ -155,13 +156,67 @@ function addRole() {
 };
 
 function addEmployee() {
-    let sql;
-
-    db.query(sql, (error, results) => {
+    let roles
+    let employees
+    db.query(`SELECT title FROM roles`, (error, results) => {
         if (error) throw error;
-        console.table(results);
-        mainMenu();
-    });
+        roles = results;
+        db.query(`SELECT CONCAT (e.first_name, ' ', e.last_name) AS full_name FROM employee AS e`, (error, results) => {
+            if (error) throw error;
+            employees = results
+
+            inquirer
+                .prompt([
+                    {
+                        type: 'input',
+                        name: 'first_name',
+                        message: "What is the employee's first name?"
+                    },
+                    {
+                        type: 'input',
+                        name: 'last_name',
+                        message: "What is the employee's last name?"
+                    },
+                    {
+                        type: 'list',
+                        name: 'role',
+                        message: 'What role is the employee filling?',
+                        choices: function () {
+                            let choiceArray = roles.map(choice => choice.title);
+                            return choiceArray;
+                        }
+                    },
+                    {
+                        type: 'list',
+                        name: 'manager',
+                        message: "Who is the employee's manager?",
+                        choices: function () {
+                            let choiceArray = employees.map(choice => choice.full_name);
+                            choiceArray.push('None');
+                            return choiceArray;
+                        }
+                    }
+                ])
+                .then((answers) => {
+                    let manager
+
+                    if (answers.manager === 'None') {
+                        manager = 'null'
+                        console.log('hi');
+                    } else {
+                        manager = `(SELECT id FROM employee WHERE CONCAT(first_name, ' ', last_name) = "${answers.manager}")`;
+                    }
+                    let sql =
+                    `INSERT INTO employee (first_name, last_name, role_id, manager_id)
+                    VALUES ("${answers.first_name}", "${answers.last_name}", 
+                    (SELECT id FROM roles WHERE title = "${answers.role}"), ${manager})`;
+
+                    db.query(sql)
+                    mainMenu();
+                })
+        }
+        )
+    })
 };
 
 init();
