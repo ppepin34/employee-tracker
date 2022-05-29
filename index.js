@@ -15,7 +15,7 @@ function mainMenu() {
                 type: 'list',
                 name: 'menu',
                 message: 'What would you like to do?',
-                choices: ['View all departments', 'View all roles', 'View all employees', 'Add a department', 'Add a role', 'Add an employee', 'Update an employee role', 'Quit']
+                choices: ['View all departments', 'View all roles', 'View all employees', 'Add a department', 'Add a role', 'Add an employee', "Update an employee's role", 'Quit']
             }
         ])
         .then((answers) => {
@@ -34,6 +34,8 @@ function mainMenu() {
                 addRole()
             } else if (answers.menu === 'Add an employee') {
                 addEmployee()
+            } else if (answers.menu === "Update an employee's role") {
+                updateRole()
             }
         })
 };
@@ -207,7 +209,7 @@ function addEmployee() {
                         manager = `(SELECT id FROM employee WHERE CONCAT(first_name, ' ', last_name) = "${answers.manager}")`;
                     }
                     let sql =
-                    `INSERT INTO employee (first_name, last_name, role_id, manager_id)
+                        `INSERT INTO employee (first_name, last_name, role_id, manager_id)
                     VALUES ("${answers.first_name}", "${answers.last_name}", 
                     (SELECT id FROM roles WHERE title = "${answers.role}"), ${manager})`;
 
@@ -218,5 +220,63 @@ function addEmployee() {
         )
     })
 };
+
+function updateRole() {
+    let employees;
+    let roles;
+    db.query(`
+    SELECT CONCAT(first_name, ' ', last_name) AS full_name FROM employee`, (error, results) => {
+        if (error) throw error;
+        employees = results;
+        db.query(`SELECT title FROM roles`, (error, results) => {
+            if (error) throw error;
+            roles = results;
+
+            inquirer
+                .prompt([
+                    {
+                        type: 'list',
+                        name: 'employee',
+                        message: "Who's role are you updating?",
+                        choices: function () {
+                            let choiceArray = employees.map(choice => choice.full_name);
+                            return choiceArray;
+                        }
+                    },
+                    {
+                        type: 'list',
+                        name: 'role',
+                        message: "What is the employee's new role?",
+                        choices: function () {
+                            let choiceArray = roles.map(choice => choice.title);
+                            return choiceArray;
+                        }
+                    }
+                ])
+                .then((answers) => {
+                    let employeeId
+                    let roleId
+                    db.query(`SELECT id FROM employee WHERE CONCAT(first_name, ' ', last_name) = "${answers.employee}"`,
+                        (err, result) => {
+                            if (err) throw err;
+                            employeeId = result.map(id => id.id);
+                            db.query(`SELECT id FROM roles WHERE title = "${answers.role}"`, (err, result) => {
+                                if (err) throw err;
+                                console.log(result);
+                                roleId = result.map(id => id.id);
+                                let querySql = `
+                                UPDATE employee SET role_id = ?
+                                WHERE id = ?`;
+                                let params = [roleId, employeeId];
+                                db.query(querySql, params, (err, result) => {
+                                    if (err) throw err;
+                                });
+                            })
+                        })
+                    mainMenu();
+                })
+        })
+    })
+}
 
 init();
