@@ -202,18 +202,28 @@ function addEmployee() {
                 .then((answers) => {
                     let manager
 
+                    // db.query(`(SELECT id FROM employee WHERE CONCAT(first_name, ' ', last_name) = "${answers.manager}")`, (error, results) => {
+                    //     if (error) throw error;
+                    //     console.log(results);
+                    // })
+
+                    console.log("before query", answers.manager);
+
                     if (answers.manager === 'None') {
                         manager = 'null'
-                        console.log('hi');
                     } else {
-                        manager = `(SELECT id FROM employee WHERE CONCAT(first_name, ' ', last_name) = "${answers.manager}")`;
+                        db.query(`(SELECT e.id FROM employee WHERE CONCAT(e.first_name, ' ', e.last_name) = ${answers.manager})`, (error, results) =>{
+                            if (error) throw error;
+                            console.log(results);
+                            manager = results.map(id => id.id);
+                    })
                     }
-                    let sql =
+                    // console.log(manager)
+                    db.query(
                         `INSERT INTO employee (first_name, last_name, role_id, manager_id)
                     VALUES ("${answers.first_name}", "${answers.last_name}", 
-                    (SELECT id FROM roles WHERE title = "${answers.role}"), ${manager})`;
+                    (SELECT id FROM roles WHERE title = "${answers.role}"), ${manager})`)
 
-                    db.query(sql)
                     mainMenu();
                 })
         }
