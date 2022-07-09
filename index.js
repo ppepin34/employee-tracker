@@ -44,7 +44,9 @@ function viewDepartments() {
 
     let sql = `SELECT department.id AS id, department.name AS 'Department' FROM department`;
     db.query(sql, (error, response) => {
-        if (error) throw error;
+        if (error) {
+            console.log(error)
+        };
         console.table(response);
         mainMenu();
     });
@@ -57,7 +59,9 @@ function viewRoles() {
     ON roles.department_id = department.id`;
 
     db.query(sql, (error, results) => {
-        if (error) throw error;
+        if (error) {
+            console.log(error)
+        };
         console.table(results);
         mainMenu();
     });
@@ -80,7 +84,9 @@ function viewEmployees() {
     ON e.manager_id = m.id`;
 
     db.query(sql, (error, results) => {
-        if (error) throw error;
+        if (error) {
+            console.log(error)
+        };
         console.table(results);
         mainMenu();
     });
@@ -103,7 +109,9 @@ function addDepartment() {
             let params = [answer.department]
 
             db.query(sql, params, (error, results) => {
-                if (error) throw error;
+                if (error) {
+                    console.log(error)
+                };
                 mainMenu();
             });
         });
@@ -115,7 +123,9 @@ function addRole() {
     let departments
 
     db.query(departmentQuery, (error, results) => {
-        if (error) throw error;
+        if (error) {
+            console.log(error)
+        };
         departments = results;
 
         inquirer
@@ -161,10 +171,14 @@ function addEmployee() {
     let roles
     let employees
     db.query(`SELECT title FROM roles`, (error, results) => {
-        if (error) throw error;
+        if (error) {
+            console.log(error)
+        };
         roles = results;
         db.query(`SELECT CONCAT (e.first_name, ' ', e.last_name) AS full_name FROM employee AS e`, (error, results) => {
-            if (error) throw error;
+            if (error) {
+                console.log(error)
+            };
             employees = results
 
             inquirer
@@ -200,30 +214,31 @@ function addEmployee() {
                     }
                 ])
                 .then((answers) => {
-                    let manager
-
-                    // db.query(`(SELECT id FROM employee WHERE CONCAT(first_name, ' ', last_name) = "${answers.manager}")`, (error, results) => {
-                    //     if (error) throw error;
-                    //     console.log(results);
-                    // })
+                    var answersArray = [answers.first_name, answers.last_name, answers.role];
+                    var manager;
 
                     console.log("before query", answers.manager);
 
                     if (answers.manager === 'None') {
-                        manager = 'null'
+                        answers.manager = 'null'
                     } else {
-                        db.query(`(SELECT e.id FROM employee WHERE CONCAT(e.first_name, ' ', e.last_name) = ${answers.manager})`, (error, results) =>{
-                            if (error) throw error;
-                            console.log(results);
-                            manager = results.map(id => id.id);
+                        db.query(`SELECT id FROM employee WHERE CONCAT(first_name, ' ', last_name) = "${answers.manager}"`, (error, results) =>{
+                            if (error) {
+                                console.log(error)
+                            };
+                            // console.log('post concat ', results);
+                            answers.manager = results.map(id => id.id);
+                            // console.log('prepush ', manager);
+                            answersArray.push(answers.manager);
                     })
+                    // console.log('post query', manager);
                     }
-                    // console.log(manager)
-                    db.query(
-                        `INSERT INTO employee (first_name, last_name, role_id, manager_id)
-                    VALUES ("${answers.first_name}", "${answers.last_name}", 
-                    (SELECT id FROM roles WHERE title = "${answers.role}"), ${manager})`)
 
+                    console.log('pre final query', manager)
+                    
+                    db.query( `INSERT INTO employee(first_name, last_name, role_id, manager_id)
+                    VALUES ("${answers.first_name}", "${answers.last_name}", 
+                    (SELECT id FROM department WHERE title = "${answers.role}"), ${answers.manager})`)
                     mainMenu();
                 })
         }
@@ -236,10 +251,14 @@ function updateRole() {
     let roles;
     db.query(`
     SELECT CONCAT(first_name, ' ', last_name) AS full_name FROM employee`, (error, results) => {
-        if (error) throw error;
+        if (error) {
+            console.log(error)
+        };
         employees = results;
         db.query(`SELECT title FROM roles`, (error, results) => {
-            if (error) throw error;
+            if (error) { 
+                console.log(error)
+            };
             roles = results;
 
             inquirer
@@ -283,10 +302,11 @@ function updateRole() {
                                 });
                             })
                         })
-                    mainMenu();
+                    // mainMenu();
                 })
         })
     })
+    mainMenu();
 }
 
 init();
