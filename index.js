@@ -214,31 +214,39 @@ function addEmployee() {
                     }
                 ])
                 .then((answers) => {
-                    var answersArray = [answers.first_name, answers.last_name, answers.role];
+                    var answersArray = [answers.first_name, answers.last_name];
                     var manager;
+                    var role;
 
                     console.log("before query", answers.manager);
 
                     if (answers.manager === 'None') {
                         answers.manager = 'null'
                     } else {
-                        db.query(`SELECT id FROM employee WHERE CONCAT(first_name, ' ', last_name) = "${answers.manager}"`, (error, results) =>{
+                        db.query(`SELECT id FROM employee WHERE CONCAT(first_name, ' ', last_name) = "${answers.manager}"`, (error, results) => {
                             if (error) {
                                 console.log(error)
                             };
                             // console.log('post concat ', results);
-                            answers.manager = results.map(id => id.id);
-                            // console.log('prepush ', manager);
-                            answersArray.push(answers.manager);
-                    })
-                    // console.log('post query', manager);
+                            manager = results.map(id => id.id);
+                            console.log('prepush manager ', manager);
+                            answersArray.push(manager);
+                        })
+                        // console.log('post query', manager);
                     }
 
-                    console.log('pre final query', manager)
-                    
-                    db.query( `INSERT INTO employee(first_name, last_name, role_id, manager_id)
-                    VALUES ("${answers.first_name}", "${answers.last_name}", 
-                    (SELECT id FROM department WHERE title = "${answers.role}"), ${answers.manager})`)
+                    db.query(`SELECT id FROM roles WHERE title = "${answers.role}"`, (err, result) => {
+                        if (err) throw err;
+                        console.log('result ', result);
+                        role = result.map(id => id.id);
+                        console.log('prepush role ', role)
+                        answersArray.push(role)
+                    })
+
+                    console.log('answersArray ', answersArray)
+
+                    db.query(`INSERT INTO employee(first_name, last_name, role_id, manager_id)
+                    VALUES ("${answers.first_name}", "${answers.last_name}", "${role}", "${manager}")`)
                     mainMenu();
                 })
         }
@@ -256,7 +264,7 @@ function updateRole() {
         };
         employees = results;
         db.query(`SELECT title FROM roles`, (error, results) => {
-            if (error) { 
+            if (error) {
                 console.log(error)
             };
             roles = results;
